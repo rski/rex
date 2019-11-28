@@ -9,13 +9,18 @@ struct Monitor<'a> {
 }
 
 fn main() {
-    let mut mons: Vec<Monitor> = Vec::new();
     let output = process::Command::new("xrandr")
         .output()
         .expect("could not run xrandr");
     let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
+    let displays = parse_xrandr(current_setup);
+    println!("setup: {:?}", displays);
+}
+
+fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
+    let mut mons: Vec<Monitor> = Vec::new();
     let mut curr_max_res: Option<&str> = None;
-    for line in current_setup.lines().rev() {
+    for line in xrandr.lines().rev() {
         if line.starts_with(" ") {
             curr_max_res = get_res(line);
             continue;
@@ -32,7 +37,7 @@ fn main() {
         };
         mons.push(d);
     }
-    println!("setup: {:?}", mons);
+    mons
 }
 
 fn get_res(line: &str) -> Option<&str> {
