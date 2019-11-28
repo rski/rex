@@ -1,6 +1,8 @@
+use std::fs;
+use std::path::PathBuf;
 use std::process;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Monitor<'a> {
     name: String,
     connected: bool,
@@ -43,4 +45,33 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
 fn get_res(line: &str) -> Option<&str> {
     let mut parts = line.split_ascii_whitespace();
     parts.nth(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testdata/laptop_simple.txt");
+        let contents =
+            fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
+        let displays = parse_xrandr(&contents);
+        let expected_displays = vec![
+            Monitor {
+                name: String::from("DP1"),
+                connected: false,
+                primary: false,
+                highest_res: None,
+            },
+            Monitor {
+                name: String::from("eDP1"),
+                connected: true,
+                primary: false,
+                highest_res: Some("1920x1080"),
+            },
+        ];
+        assert_eq! {displays, expected_displays};
+    }
 }
