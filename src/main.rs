@@ -24,7 +24,7 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
     let mut curr_max_res: Option<&str> = None;
     for line in xrandr.lines().rev() {
         if line.starts_with(" ") {
-            curr_max_res = get_res(line);
+            curr_max_res = line.split_ascii_whitespace().nth(0);
             continue;
         }
         if line.starts_with("Screen ") {
@@ -40,11 +40,6 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
         mons.push(d);
     }
     mons
-}
-
-fn get_res(line: &str) -> Option<&str> {
-    let mut parts = line.split_ascii_whitespace();
-    parts.nth(0)
 }
 
 #[cfg(test)]
