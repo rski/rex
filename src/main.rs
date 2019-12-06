@@ -1,5 +1,3 @@
-use std::fs;
-use std::path::PathBuf;
 use std::process;
 
 #[derive(Debug, PartialEq)]
@@ -45,6 +43,8 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::path::PathBuf;
 
     #[test]
     fn test_parse() {
