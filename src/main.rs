@@ -1,4 +1,5 @@
 use std::process;
+use std::time;
 
 #[derive(Debug, PartialEq)]
 struct Monitor<'a> {
@@ -9,12 +10,36 @@ struct Monitor<'a> {
 }
 
 fn main() {
-    let output = process::Command::new("xrandr")
-        .output()
-        .expect("could not run xrandr");
-    let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
-    let displays = parse_xrandr(current_setup);
-    println!("setup: {:?}", displays);
+    let sleep_time = time::Duration::from_secs(1);
+    loop {
+        let output = process::Command::new("xrandr")
+            .output()
+            .expect("could not run xrandr");
+        let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
+        let displays = parse_xrandr(current_setup);
+        // println!("setup: {:?}", displays);
+        let (cmd, args) = displays_to_command(displays);
+        let mut proc = process::Command::new(cmd);
+        for i in args.split_whitespace() {
+            proc.arg(i);
+        }
+        match proc.output() {
+            Ok(_) => (),
+            Err(e) => println! {"{}", e},
+        }
+        proc.status().expect("failed to run");
+
+        std::thread::sleep(sleep_time)
+    }
+}
+
+fn displays_to_command(displays: Vec<Monitor>) -> (String, String) {
+    for d in displays.iter() {
+        if d.name == "DP2-2-8" && d.connected {
+            return (String::from("xrandr"), String::from("--output eDP1 --off --output DP2-1 --primary --mode 2560x1440 --pos 0x0 --rotate left --output DP2-2-8 --mode 2560x1440 --pos 1440x560 --rotate normal"));
+        }
+    }
+    return (String::from("xrandr"), String::from("--auto"));
 }
 
 fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
