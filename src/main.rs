@@ -34,7 +34,7 @@ fn displays_to_command(displays: Vec<Monitor>) -> Box<process::Command> {
     let mut proc = process::Command::new("xrandr");
     for d in displays.iter() {
         if d.name == "DP2-2-8" && d.connected {
-            for i in String::from("--output eDP1 --off --output DP2-1 --primary --mode 2560x1440 --pos 0x0 --rotate left --output DP2-2-8 --mode 2560x1440 --pos 1440x560 --rotate normal").split_ascii_whitespace() {
+            for i in String::from("--output eDP1 --off --output DP2-1 --primary --mode 2560x1440 --pos 0x0 --rotate left --crtc 0 --output DP2-2-8 --mode 2560x1440 --pos 1440x560 --rotate normal --crtc 1").split_ascii_whitespace() {
                 proc.arg(i);
             }
             return Box::new(proc);
