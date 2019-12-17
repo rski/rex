@@ -10,7 +10,7 @@ struct Monitor<'a> {
 }
 
 fn main() {
-    let sleep_time = time::Duration::from_secs(1);
+    let sleep_time = time::Duration::from_secs(10);
     loop {
         let output = process::Command::new("xrandr")
             .output()
