@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process;
 use std::time;
 
@@ -30,10 +31,11 @@ fn main() {
     }
 }
 
-fn displays_to_command(displays: Vec<Monitor>) -> Box<process::Command> {
+fn displays_to_command(displays: HashMap<String, Monitor>) -> Box<process::Command> {
     let mut proc = process::Command::new("xrandr");
-    for d in displays.iter() {
-        if d.name == "DP2-2-8" && d.connected {
+    let dp = displays.get("DP2-2-8");
+    if let Some(d) = dp {
+        if d.connected {
             for i in String::from("--output eDP1 --off --output DP2-1 --primary --mode 2560x1440 --pos 0x0 --rotate left --crtc 0 --output DP2-2-8 --mode 2560x1440 --pos 1440x560 --rotate normal --crtc 1").split_ascii_whitespace() {
                 proc.arg(i);
             }
@@ -44,8 +46,8 @@ fn displays_to_command(displays: Vec<Monitor>) -> Box<process::Command> {
     return Box::new(proc);
 }
 
-fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
-    let mut mons: Vec<Monitor> = Vec::new();
+fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
+    let mut mons: HashMap<String, Monitor> = HashMap::new();
     let mut curr_max_res: Option<&str> = None;
     for line in xrandr.lines().rev() {
         if line.starts_with(" ") {
@@ -62,7 +64,7 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
             primary: v[2] == "primary",
             highest_res: curr_max_res,
         };
-        mons.push(d);
+        mons.insert(d.name.clone(), d);
     }
     mons
 }
@@ -70,6 +72,7 @@ fn parse_xrandr(xrandr: &str) -> Vec<Monitor> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
     use std::fs;
     use std::path::PathBuf;
 
@@ -80,20 +83,25 @@ mod tests {
         let contents =
             fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
         let displays = parse_xrandr(&contents);
-        let expected_displays = vec![
+        let mut expected_displays_map: HashMap<String, Monitor> = HashMap::new();
+        expected_displays_map.insert(
+            String::from("DP1"),
             Monitor {
                 name: String::from("DP1"),
                 connected: false,
                 primary: false,
                 highest_res: None,
             },
+        );
+        expected_displays_map.insert(
+            String::from("eDP1"),
             Monitor {
                 name: String::from("eDP1"),
                 connected: true,
                 primary: false,
                 highest_res: Some("1920x1080"),
             },
-        ];
-        assert_eq! {displays, expected_displays};
+        );
+        assert_eq! {displays, expected_displays_map};
     }
 }
