@@ -31,6 +31,7 @@ fn main() {
         let mut proc = displays_to_command(displays);
         if args.dry_run {
             println!("would have executed {:?}", proc);
+            return;
         } else {
             match proc.output() {
                 Ok(_) => (),
