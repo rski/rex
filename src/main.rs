@@ -55,15 +55,15 @@ fn displays_to_command(displays: HashMap<String, Monitor>) -> Box<process::Comma
         }
     }
     proc.arg("--auto");
-    return Box::new(proc);
+    Box::new(proc)
 }
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
     let mut mons: HashMap<String, Monitor> = HashMap::new();
     let mut max_res: Option<&str> = None;
     for line in xrandr.lines().rev() {
-        if line.starts_with(" ") {
-            max_res = line.split_ascii_whitespace().nth(0);
+        if line.starts_with(' ') {
+            max_res = line.split_ascii_whitespace().next();
             continue;
         }
         if line.starts_with("Screen ") {
@@ -91,7 +91,7 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<&'a str>) -> Monitor<'a> {
         connected: v[1] == "connected",
         primary: prim,
         highest_res: max_res,
-        on: !v[res_offset].starts_with("("), // crude approximation
+        on: !v[res_offset].starts_with('('), // crude approximation
     };
 
     println!("{:?}", m);
