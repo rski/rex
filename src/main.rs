@@ -7,6 +7,7 @@ struct Monitor<'a> {
     name: String,
     connected: bool,
     primary: bool,
+    on: bool,
     highest_res: Option<&'a str>,
 }
 
@@ -63,14 +64,27 @@ fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
     mons
 }
 
+// a display looks like
+// <name> (dis)connected [primary] [resolution+offset] (normal left inverted right x axis y axis) 527mm x 296mm
+// a display that is on will have a resolution.
+// Oddly enough, a display that is off can still be primary.
 fn parse_monitor<'a>(line: &'a str, max_res: Option<&'a str>) -> Monitor<'a> {
     let v: Vec<&str> = line.split_ascii_whitespace().collect();
-    Monitor {
+    if v.len() < 3 {
+        panic!("input was long enough, cannot parse {:?}", v)
+    }
+    let prim = v[2] == "primary";
+    let res_offset = if prim { 3 } else { 2 };
+    let m = Monitor {
         name: v[0].to_owned(),
         connected: v[1] == "connected",
-        primary: v[2] == "primary",
+        primary: prim,
         highest_res: max_res,
-    }
+        on: !v[res_offset].starts_with("("), // crude approximation
+    };
+
+    println!("{:?}", m);
+    m
 }
 
 #[cfg(test)]
@@ -95,6 +109,7 @@ mod tests {
                 connected: false,
                 primary: false,
                 highest_res: None,
+                on: false,
             },
         );
         expected_displays_map.insert(
@@ -104,6 +119,7 @@ mod tests {
                 connected: true,
                 primary: false,
                 highest_res: Some("1920x1080"),
+                on: true,
             },
         );
         assert_eq! {displays, expected_displays_map};
