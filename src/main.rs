@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::process;
 use std::time;
+use structopt::StructOpt;
 
 #[derive(Debug, PartialEq)]
 struct Monitor<'a> {
@@ -11,7 +12,14 @@ struct Monitor<'a> {
     highest_res: Option<&'a str>,
 }
 
+#[derive(StructOpt)]
+struct Cli {
+    #[structopt(short, long)]
+    dry_run: bool,
+}
+
 fn main() {
+    let args = Cli::from_args();
     let sleep_time = time::Duration::from_secs(10);
     loop {
         let output = process::Command::new("xrandr")
@@ -19,14 +27,17 @@ fn main() {
             .expect("could not run xrandr");
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
         let displays = parse_xrandr(current_setup);
-        // println!("setup: {:?}", displays);
-        let mut proc = displays_to_command(displays);
 
-        match proc.output() {
-            Ok(_) => (),
-            Err(e) => println! {"{}", e},
+        let mut proc = displays_to_command(displays);
+        if args.dry_run {
+            println!("would have executed {:?}", proc);
+        } else {
+            match proc.output() {
+                Ok(_) => (),
+                Err(e) => println! {"{}", e},
+            }
+            proc.status().expect("failed to run");
         }
-        proc.status().expect("failed to run");
 
         std::thread::sleep(sleep_time)
     }
