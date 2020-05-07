@@ -48,25 +48,29 @@ fn displays_to_command(displays: HashMap<String, Monitor>) -> Box<process::Comma
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
     let mut mons: HashMap<String, Monitor> = HashMap::new();
-    let mut curr_max_res: Option<&str> = None;
+    let mut max_res: Option<&str> = None;
     for line in xrandr.lines().rev() {
         if line.starts_with(" ") {
-            curr_max_res = line.split_ascii_whitespace().nth(0);
+            max_res = line.split_ascii_whitespace().nth(0);
             continue;
         }
         if line.starts_with("Screen ") {
             continue;
         }
-        let v: Vec<&str> = line.split_ascii_whitespace().collect();
-        let d = Monitor {
-            name: v[0].to_owned(),
-            connected: v[1] == "connected",
-            primary: v[2] == "primary",
-            highest_res: curr_max_res,
-        };
+        let d = parse_monitor(line, max_res);
         mons.insert(d.name.clone(), d);
     }
     mons
+}
+
+fn parse_monitor<'a>(line: &'a str, max_res: Option<&'a str>) -> Monitor<'a> {
+    let v: Vec<&str> = line.split_ascii_whitespace().collect();
+    Monitor {
+        name: v[0].to_owned(),
+        connected: v[1] == "connected",
+        primary: v[2] == "primary",
+        highest_res: max_res,
+    }
 }
 
 #[cfg(test)]
