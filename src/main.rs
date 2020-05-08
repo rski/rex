@@ -84,11 +84,8 @@ fn predicate_matches(
     predicates: &Option<Vec<Predicate>>,
     displays: &HashMap<String, Monitor>,
 ) -> bool {
-    if predicates.is_none() {
-        return true;
-    }
-    for pred1 in predicates.iter().next() {
-        for pred in pred1.iter() {
+    predicates.as_ref().map_or(true, |preds| {
+        for pred in preds.iter() {
             if let Some(display) = displays.get(pred.name.as_str()) {
                 if let Some(res) = display.highest_res {
                     if !res.eq(pred.res.as_str()) {
@@ -104,8 +101,8 @@ fn predicate_matches(
                 return false;
             }
         }
-    }
-    true
+        true
+    })
 }
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
