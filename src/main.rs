@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process;
 use std::time;
 use structopt::StructOpt;
+use toml;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 struct Monitor<'a> {
     name: String,
     connected: bool,
@@ -16,6 +18,27 @@ struct Monitor<'a> {
 struct Cli {
     #[structopt(short, long)]
     dry_run: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct Predicate<'a> {
+    name: String,
+    connected: bool,
+    #[serde(borrow)]
+    res: &'a str,
+}
+
+#[derive(Debug, Deserialize)]
+struct Setup<'a> {
+    exec: String,
+    #[serde(borrow)]
+    predicates: Option<Vec<Predicate<'a>>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Config<'a> {
+    #[serde(borrow)]
+    setup: Vec<Setup<'a>>,
 }
 
 fn main() {
@@ -135,5 +158,14 @@ mod tests {
             },
         );
         assert_eq! {displays, expected_displays_map};
+    }
+    #[test]
+
+    fn test_parse_predicate() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("testdata/config.toml");
+        let contents =
+            fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
+        toml::from_str::<Config>(contents.as_str()).unwrap();
     }
 }
