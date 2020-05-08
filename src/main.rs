@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::process;
 use std::time;
 use structopt::StructOpt;
@@ -21,24 +22,21 @@ struct Cli {
 }
 
 #[derive(Debug, Deserialize)]
-struct Predicate<'a> {
+struct Predicate {
     name: String,
     connected: bool,
-    #[serde(borrow)]
-    res: &'a str,
+    res: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct Setup<'a> {
+struct Setup {
     exec: String,
-    #[serde(borrow)]
-    predicates: Option<Vec<Predicate<'a>>>,
+    predicates: Option<Vec<Predicate>>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Config<'a> {
-    #[serde(borrow)]
-    setup: Vec<Setup<'a>>,
+struct Config {
+    setup: Vec<Setup>,
 }
 
 fn main() {
@@ -50,8 +48,9 @@ fn main() {
             .expect("could not run xrandr");
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
         let displays = parse_xrandr(current_setup);
+        let config = get_config();
 
-        let mut proc = displays_to_command(&displays);
+        let mut proc = select_command(&displays, &config);
         if args.dry_run {
             println!("would have executed {:?}", proc);
             return;
@@ -67,19 +66,46 @@ fn main() {
     }
 }
 
-fn displays_to_command(displays: &HashMap<String, Monitor>) -> Box<process::Command> {
-    let mut proc = process::Command::new("xrandr");
-    let dp = displays.get("DP2-2-8");
-    if let Some(d) = dp {
-        if d.connected {
-            for i in String::from("--output eDP1 --off --output DP2-1 --primary --mode 2560x1440 --pos 0x0 --rotate left --crtc 0 --output DP2-2-8 --mode 2560x1440 --pos 1440x560 --rotate normal --crtc 1").split_ascii_whitespace() {
+fn select_command(displays: &HashMap<String, Monitor>, cfg: &Config) -> Box<process::Command> {
+    let mut proc = Box::new(process::Command::new("xrandr"));
+    for setup in cfg.setup.iter() {
+        if predicate_matches(&setup.predicates, displays) {
+            for i in setup.exec.split_ascii_whitespace() {
                 proc.arg(i);
             }
-            return Box::new(proc);
+            return proc;
         }
     }
     proc.arg("--auto");
-    Box::new(proc)
+    proc
+}
+
+fn predicate_matches(
+    predicates: &Option<Vec<Predicate>>,
+    displays: &HashMap<String, Monitor>,
+) -> bool {
+    if predicates.is_none() {
+        return true;
+    }
+    for pred1 in predicates.iter().next() {
+        for pred in pred1.iter() {
+            if let Some(display) = displays.get(pred.name.as_str()) {
+                if let Some(res) = display.highest_res {
+                    if !res.eq(pred.res.as_str()) {
+                        return false;
+                    }
+                    if !display.connected == pred.connected {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+    true
 }
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
@@ -120,6 +146,14 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<&'a str>) -> Monitor<'a> {
 
     println!("{:?}", m);
     m
+}
+
+fn get_config() -> Config {
+    let home = "/home/rski/.config/rex/config.toml";
+    println!("{:?}", home);
+    let contents = fs::read_to_string(home).expect("Something went wrong reading the file");
+
+    toml::from_str::<Config>(contents.as_str()).unwrap()
 }
 
 #[cfg(test)]
