@@ -28,7 +28,7 @@ fn main() {
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
         let displays = parse_xrandr(current_setup);
 
-        let mut proc = displays_to_command(displays);
+        let mut proc = displays_to_command(&displays);
         if args.dry_run {
             println!("would have executed {:?}", proc);
             return;
@@ -44,7 +44,7 @@ fn main() {
     }
 }
 
-fn displays_to_command(displays: HashMap<String, Monitor>) -> Box<process::Command> {
+fn displays_to_command(displays: &HashMap<String, Monitor>) -> Box<process::Command> {
     let mut proc = process::Command::new("xrandr");
     let dp = displays.get("DP2-2-8");
     if let Some(d) = dp {
