@@ -41,14 +41,14 @@ struct Config {
 
 fn main() {
     let args = Cli::from_args();
-    let sleep_time = time::Duration::from_secs(10);
+    let sleep_time = time::Duration::from_secs(1);
+    let config = get_config();
     loop {
         let output = process::Command::new("xrandr")
             .output()
             .expect("could not run xrandr");
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
         let displays = parse_xrandr(current_setup);
-        let config = get_config();
 
         let mut proc = select_command(&displays, &config);
         if args.dry_run {
