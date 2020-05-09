@@ -43,12 +43,19 @@ fn main() {
     let args = Cli::from_args();
     let sleep_time = time::Duration::from_secs(1);
     let config = get_config();
+    let mut prev_setup: Box<HashMap<String, Monitor>> = Box::from(HashMap::new());
     loop {
         let output = process::Command::new("xrandr")
             .output()
             .expect("could not run xrandr");
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
-        let displays = parse_xrandr(current_setup);
+        let displays = Box::from(parse_xrandr(current_setup));
+
+        if displays == prev_setup {
+            println!("Steady state");
+            std::thread::sleep(sleep_time);
+            continue;
+        }
 
         let mut proc = select_command(&displays, &config);
         if args.dry_run {
@@ -60,6 +67,7 @@ fn main() {
                 Err(e) => println! {"{}", e},
             }
             proc.status().expect("failed to run");
+            prev_setup = Box::from(parse_xrandr(current_setup));
         }
 
         std::thread::sleep(sleep_time)
