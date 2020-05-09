@@ -7,12 +7,12 @@ use structopt::StructOpt;
 use toml;
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
-struct Monitor<'a> {
+struct Monitor {
     name: String,
     connected: bool,
     primary: bool,
     on: bool,
-    highest_res: Option<&'a str>,
+    highest_res: Option<String>,
 }
 
 #[derive(StructOpt)]
@@ -87,7 +87,7 @@ fn predicate_matches(
     predicates.as_ref().map_or(true, |preds| {
         for pred in preds.iter() {
             if let Some(display) = displays.get(pred.name.as_str()) {
-                if let Some(res) = display.highest_res {
+                if let Some(res) = display.highest_res.as_ref() {
                     if !res.eq(pred.res.as_str()) {
                         return false;
                     }
@@ -107,16 +107,16 @@ fn predicate_matches(
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
     let mut mons: HashMap<String, Monitor> = HashMap::new();
-    let mut max_res: Option<&str> = None;
+    let mut max_res: Option<String> = None;
     for line in xrandr.lines().rev() {
         if line.starts_with(' ') {
-            max_res = line.split_ascii_whitespace().next();
+            max_res = Some(line.split_ascii_whitespace().next().unwrap().to_owned());
             continue;
         }
         if line.starts_with("Screen ") {
             continue;
         }
-        let d = parse_monitor(line, max_res);
+        let d = parse_monitor(line, max_res.clone());
         mons.insert(d.name.clone(), d);
     }
     mons
@@ -126,7 +126,7 @@ fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
 // <name> (dis)connected [primary] [resolution+offset] (normal left inverted right x axis y axis) 527mm x 296mm
 // a display that is on will have a resolution.
 // Oddly enough, a display that is off can still be primary.
-fn parse_monitor<'a>(line: &'a str, max_res: Option<&'a str>) -> Monitor<'a> {
+fn parse_monitor<'a>(line: &'a str, max_res: Option<String>) -> Monitor {
     let v: Vec<&str> = line.split_ascii_whitespace().collect();
     if v.len() < 3 {
         panic!("input was long enough, cannot parse {:?}", v)
