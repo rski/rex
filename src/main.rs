@@ -192,7 +192,7 @@ mod tests {
                 name: String::from("eDP1"),
                 connected: true,
                 primary: false,
-                highest_res: Some("1920x1080"),
+                highest_res: Some(String::from("1920x1080")),
                 on: true,
             },
         );
