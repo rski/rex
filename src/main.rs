@@ -94,18 +94,14 @@ fn predicate_matches(
 ) -> bool {
     predicates.as_ref().map_or(true, |preds| {
         for pred in preds.iter() {
-            if let Some(display) = displays.get(pred.name.as_str()) {
-                if let Some(res) = &display.highest_res {
-                    if !res.eq(pred.res.as_str()) {
-                        return false;
-                    }
-                    if !display.connected == pred.connected {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
+            let ok = match displays.get(pred.name.as_str()) {
+                Some(display) => match &display.highest_res {
+                    Some(res) => res.eq(pred.res.as_str()) && display.connected == pred.connected,
+                    _ => false,
+                },
+                _ => false,
+            };
+            if !ok {
                 return false;
             }
         }
