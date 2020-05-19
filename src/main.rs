@@ -63,8 +63,8 @@ fn main() {
             return;
         } else {
             match proc.output() {
-                Ok(_) => (),
                 Err(e) => println! {"{}", e},
+                _ => {}
             }
             proc.status().expect("failed to run");
             prev_setup = Box::from(parse_xrandr(current_setup));
@@ -95,7 +95,7 @@ fn predicate_matches(
     predicates.as_ref().map_or(true, |preds| {
         for pred in preds.iter() {
             if let Some(display) = displays.get(pred.name.as_str()) {
-                if let Some(res) = display.highest_res.as_ref() {
+                if let Some(res) = &display.highest_res {
                     if !res.eq(pred.res.as_str()) {
                         return false;
                     }
