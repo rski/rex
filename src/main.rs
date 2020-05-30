@@ -44,6 +44,7 @@ fn main() {
     let sleep_time = time::Duration::from_secs(1);
     let config = get_config();
     let mut prev_setup: Box<HashMap<String, Monitor>> = Box::from(HashMap::new());
+    let mut logged: bool = false;
     loop {
         let output = process::Command::new("xrandr")
             .output()
@@ -52,11 +53,16 @@ fn main() {
         let displays = Box::from(parse_xrandr(current_setup));
 
         if displays == prev_setup {
-            println!("Steady state");
+            if !logged {
+                println!("Steady state");
+            };
+            logged = true;
             std::thread::sleep(sleep_time);
             continue;
         }
 
+        logged = false;
+        println!("{:?}", &displays);
         let mut proc = select_command(&displays, &config);
         if args.dry_run {
             println!("would have executed {:?}", proc);
@@ -145,7 +151,6 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<String>) -> Monitor {
         on: !v[res_offset].starts_with('('), // crude approximation
     };
 
-    println!("{:?}", m);
     m
 }
 
