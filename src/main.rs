@@ -36,13 +36,14 @@ struct Setup {
 
 #[derive(Debug, Deserialize)]
 struct Config {
+    sleep_time : Option<time::Duration>,
     setup: Vec<Setup>,
 }
 
 fn main() {
     let args = Cli::from_args();
-    let sleep_time = time::Duration::from_secs(1);
     let config = get_config();
+    let sleep_time = config.sleep_time.unwrap_or(time::Duration::from_secs(1));
     let mut prev_setup: Box<HashMap<String, Monitor>> = Box::from(HashMap::new());
     let mut logged: bool = false;
     loop {
@@ -150,8 +151,8 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<String>) -> Monitor {
         highest_res: max_res,
         on: !v[res_offset].starts_with('('), // crude approximation
     };
-
     m
+
 }
 
 fn get_config() -> Config {
@@ -200,12 +201,12 @@ mod tests {
         assert_eq! {displays, expected_displays_map};
     }
     #[test]
-
     fn test_parse_predicate() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         d.push("testdata/config.toml");
         let contents =
             fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
-        toml::from_str::<Config>(contents.as_str()).unwrap();
+        let c = toml::from_str::<Config>(contents.as_str()).unwrap();
+        assert_eq!(c.sleep_time, Some(time::Duration::from_secs(2)));
     }
 }

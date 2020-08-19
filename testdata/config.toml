@@ -1,10 +1,12 @@
+[sleep_time]
+secs=2
+nanos=0
+
 [[setup]]
 exec = "--output eDP1 --off --output HDMI-2 --primary --mode 2560x1440 --pos 0x0"
 predicates = [
  { name = "HDMI-2", connected = true, res = "2560x1440" }
 ]
-
-
 
 [[setup]]
 exec = "--auto"
