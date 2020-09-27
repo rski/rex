@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 use std::process;
 use std::time;
 use structopt::StructOpt;
+use xdg::BaseDirectories;
 use toml;
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -156,10 +158,11 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<String>) -> Monitor {
 }
 
 fn get_config() -> Config {
-    let home = "/home/rski/.config/rex/config.toml";
-    println!("{:?}", home);
-    let contents = fs::read_to_string(home).expect("Something went wrong reading the file");
-
+    let p = Path::new("rex/config.toml");
+    let dirs = BaseDirectories::new().unwrap();
+    let cfg = dirs.find_config_file(p).unwrap();
+    println!("using config {}", cfg.to_str().unwrap());
+    let contents = fs::read_to_string(cfg).expect("Something went wrong reading the file");
     toml::from_str::<Config>(contents.as_str()).unwrap()
 }
 
