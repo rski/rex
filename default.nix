@@ -11,5 +11,5 @@ pkgs.rustPlatform.buildRustPackage rec {
 
     propagatedBuildInputs = [ pkgs.rustfmt ];
 
-    cargoSha256 = "1nk56f5n9zkc2rjnzcaiis2yp00s8zx1dacrvxm74spazqfkxq5r";
+    cargoSha256 = "0s5kq8ga7i8q3pj5cdyx4ipinw3ljvkxxr8wg5w8ld6hpwvc0hhm";
 }
