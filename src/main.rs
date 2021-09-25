@@ -65,7 +65,7 @@ fn main() {
         logged = false;
         println!("{:?}", &displays);
         let mut proc = select_command(&displays, &config);
-        if args.contains(&String::from("--dry-run")) {
+        if dry_run {
             println!("would have executed {:?}", proc);
             return;
         } else {
