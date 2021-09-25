@@ -100,18 +100,18 @@ fn predicate_matches(
     displays: &HashMap<String, Monitor>,
 ) -> bool {
     predicates.as_ref().map_or(true, |preds| {
-        for pred in preds.iter() {
+        preds.iter().for_each(|pred| {
             let ok = match displays.get(pred.name.as_str()) {
                 Some(display) => match &display.highest_res {
                     Some(res) => res.eq(pred.res.as_str()) && display.connected == pred.connected,
-                    _ => false,
+                    None => false,
                 },
                 _ => false,
             };
             if !ok {
-                return false;
+                false;
             }
-        }
+        });
         true
     })
 }
@@ -152,7 +152,6 @@ fn parse_monitor<'a>(line: &'a str, max_res: Option<String>) -> Monitor {
         on: !v[res_offset].starts_with('('), // crude approximation
     };
     m
-
 }
 
 fn get_config() -> Config {
@@ -168,15 +167,14 @@ fn get_config() -> Config {
 mod tests {
     use super::*;
     use std::collections::HashMap;
-    use std::fs;
-    use std::path::PathBuf;
+    use std::{fs::read_to_string, path::PathBuf};
 
     #[test]
     fn test_parse() {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         d.push("testdata/laptop_simple.txt");
         let contents =
-            fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
+            read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
         let displays = parse_xrandr(&contents);
         let mut expected_displays_map: HashMap<String, Monitor> = HashMap::new();
         expected_displays_map.insert(
@@ -206,7 +204,7 @@ mod tests {
         let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         d.push("testdata/config.toml");
         let contents =
-            fs::read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
+            read_to_string(d.to_str().unwrap()).expect("Something went wrong reading the file");
         let c = toml::from_str::<Config>(contents.as_str()).unwrap();
         assert_eq!(c.sleep_time, Some(time::Duration::from_secs(2)));
     }
