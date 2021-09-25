@@ -1,14 +1,8 @@
-let
-  pkgs = import <nixpkgs>{};
-  srcNoTarget = dir:
-    builtins.filterSource
-    (path: type: type != "directory" || builtins.baseNameOf path != "target")
-    dir;
-in
-pkgs.rustPlatform.buildRustPackage rec {
-    name= "rex";
-    src = srcNoTarget ./.;
+with import <nixpkgs> { };
+rustPlatform.buildRustPackage rec {
+  name = "rex";
+  src = nix-gitignore.gitignoreSource [ ] ./.;
 
-    propagatedBuildInputs = [ pkgs.rustfmt ];
-    cargoLock = { lockFile = ./Cargo.lock; };
+  propagatedBuildInputs = [ rustfmt ];
+  cargoLock = { lockFile = ./Cargo.lock; };
 }
