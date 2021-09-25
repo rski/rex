@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env::args;
 use std::fs;
 use std::path::Path;
 use std::process;
 use std::time;
-use structopt::StructOpt;
-use xdg::BaseDirectories;
 use toml;
+use xdg::BaseDirectories;
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 struct Monitor {
@@ -15,12 +15,6 @@ struct Monitor {
     primary: bool,
     on: bool,
     highest_res: Option<String>,
-}
-
-#[derive(StructOpt)]
-struct Cli {
-    #[structopt(short, long)]
-    dry_run: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,12 +32,16 @@ struct Setup {
 
 #[derive(Debug, Deserialize)]
 struct Config {
-    sleep_time : Option<time::Duration>,
+    sleep_time: Option<time::Duration>,
     setup: Vec<Setup>,
 }
 
 fn main() {
-    let args = Cli::from_args();
+    let args: Vec<String> = args().collect();
+    let dry_run = args.contains(&String::from("--dry-run"));
+    if args.len() > 2 || (args.len() == 2 && !dry_run) {
+        panic!("unexpected arguments {:?}", args);
+    }
     let config = get_config();
     let sleep_time = config.sleep_time.unwrap_or(time::Duration::from_secs(1));
     let mut prev_setup: Box<HashMap<String, Monitor>> = Box::from(HashMap::new());
@@ -67,7 +65,7 @@ fn main() {
         logged = false;
         println!("{:?}", &displays);
         let mut proc = select_command(&displays, &config);
-        if args.dry_run {
+        if args.contains(&String::from("--dry-run")) {
             println!("would have executed {:?}", proc);
             return;
         } else {
