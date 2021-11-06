@@ -44,7 +44,7 @@ fn main() {
     }
     let config = get_config();
     let sleep_time = config.sleep_time.unwrap_or(time::Duration::from_secs(1));
-    let mut prev_setup: Box<HashMap<String, Monitor>> = Box::from(HashMap::new());
+    let mut prev_setup = Box::from(HashMap::new());
     let mut logged: bool = false;
     loop {
         let output = process::Command::new("xrandr")
@@ -69,9 +69,8 @@ fn main() {
             println!("would have executed {:?}", proc);
             return;
         } else {
-            match proc.output() {
-                Err(e) => println! {"{}", e},
-                _ => {}
+            if let Err(e) = proc.output() {
+                println! {"{}", e};
             }
             proc.status().expect("failed to run");
             prev_setup = Box::from(parse_xrandr(current_setup));
@@ -99,21 +98,19 @@ fn predicate_matches(
     predicates: &Option<Vec<Predicate>>,
     displays: &HashMap<String, Monitor>,
 ) -> bool {
-    predicates.as_ref().map_or(true, |preds| {
-        preds.iter().for_each(|pred| {
-            let ok = match displays.get(pred.name.as_str()) {
-                Some(display) => match &display.highest_res {
-                    Some(res) => res.eq(pred.res.as_str()) && display.connected == pred.connected,
-                    None => false,
-                },
-                _ => false,
-            };
-            if !ok {
-                false;
-            }
-        });
-        true
-    })
+    predicates.as_ref().map_or(
+        true, // no prediactes == unconditionally accept
+        |preds| {
+            preds.iter().any(|pred| {
+                if let Some(display) = displays.get(pred.name.as_str()) {
+                    if let Some(res) = &display.highest_res {
+                        return res.eq(pred.res.as_str()) && display.connected == pred.connected;
+                    }
+                }
+                false
+            })
+        },
+    )
 }
 
 fn parse_xrandr(xrandr: &str) -> HashMap<String, Monitor> {
