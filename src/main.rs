@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env::args;
+use std::fmt::Formatter;
 use std::fs;
 use std::path::Path;
 use std::process;
@@ -17,11 +18,21 @@ struct Monitor {
     highest_res: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Predicate {
     name: String,
     connected: bool,
     res: String,
+}
+
+impl std::fmt::Debug for Predicate {
+    fn fmt<'a>(&self, f: &mut Formatter<'a>) -> std::fmt::Result {
+        if self.res.is_empty() {
+            write!(f, "{}, {}", self.name, self.connected)
+        } else {
+            write!(f, "{}@{}, {}", self.name, self.res, self.connected)
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
