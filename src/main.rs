@@ -113,12 +113,10 @@ fn predicate_matches(
         true, // no prediactes == unconditionally accept
         |preds| {
             preds.iter().any(|pred| {
-                if let Some(display) = displays.get(pred.name.as_str()) {
-                    if let Some(res) = &display.highest_res {
-                        return res.eq(pred.res.as_str()) && display.connected == pred.connected;
-                    }
-                }
-                false
+                displays.get(pred.name.as_str()).map_or(false, |display| {
+                    display.connected == pred.connected
+                        && display.highest_res.as_ref() == Some(&pred.res)
+                })
             })
         },
     )
