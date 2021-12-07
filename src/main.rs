@@ -55,14 +55,14 @@ fn main() {
     }
     let config = get_config();
     let sleep_time = config.sleep_time.unwrap_or(time::Duration::from_secs(1));
-    let mut prev_setup = Box::from(HashMap::new());
+    let mut prev_setup = HashMap::new();
     let mut logged: bool = false;
     loop {
         let output = process::Command::new("xrandr")
             .output()
             .expect("could not run xrandr");
         let current_setup = std::str::from_utf8(&output.stdout).expect("could not get output");
-        let displays = Box::from(parse_xrandr(current_setup));
+        let displays = parse_xrandr(current_setup);
 
         if displays == prev_setup {
             if !logged {
@@ -84,15 +84,15 @@ fn main() {
                 println! {"{}", e};
             }
             proc.status().expect("failed to run");
-            prev_setup = Box::from(parse_xrandr(current_setup));
+            prev_setup = parse_xrandr(current_setup);
         }
 
         std::thread::sleep(sleep_time)
     }
 }
 
-fn select_command(displays: &HashMap<String, Monitor>, cfg: &Config) -> Box<process::Command> {
-    let mut proc = Box::new(process::Command::new("xrandr"));
+fn select_command(displays: &HashMap<String, Monitor>, cfg: &Config) -> process::Command {
+    let mut proc = process::Command::new("xrandr");
     for setup in cfg.setup.iter() {
         if predicate_matches(&setup.predicates, displays) {
             for i in setup.exec.split_ascii_whitespace() {
